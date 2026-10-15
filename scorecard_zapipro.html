@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scorecard de Maturidade Operacional B2B | ZAPIPRO</title>
+<style>
+/* ===== IDENTIDADE ZAPIPRO: troque aqui as cores e a fonte ===== */
+:root{
+  --cor-principal:#7947C7;   /* roxo ZAPIPRO (cores aproximadas do print do site) */
+  --cor-laranja:#E8805F;     /* laranja ZAPIPRO */
+  --cor-escura:#1E1B2E;      /* títulos */
+  --cor-clara:#F6F2FB;       /* fundo da página */
+  --cor-texto:#4B4A5C;
+  --degrade:linear-gradient(90deg,#8951B9,#E08673);
+  --fonte:"Open Sans","Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--fonte);background:var(--cor-clara);color:var(--cor-texto);line-height:1.5}
+header{background:#fff;padding:16px 20px;text-align:center;box-shadow:0 2px 12px rgba(121,71,199,.12)}
+.logo{font-weight:800;letter-spacing:1px;font-size:26px;color:var(--cor-principal)}
+.logo span{color:var(--cor-laranja)}
+.logo img{max-height:40px}
+main{max-width:640px;margin:0 auto;padding:24px 16px 60px}
+.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 18px rgba(0,0,0,.07)}
+h1{font-size:26px;margin:0 0 8px;color:var(--cor-escura)}
+h1 em{font-style:normal;color:var(--cor-principal)}
+h2{font-size:19px;color:var(--cor-escura);margin:0 0 16px}
+p{margin:0 0 14px}
+.btn{display:block;width:100%;border:0;border-radius:999px;background:var(--degrade);color:#fff;font:600 16px var(--fonte);padding:14px;cursor:pointer;text-align:center;text-decoration:none}
+.btn.sec{background:#fff;color:var(--cor-principal);border:2px solid var(--cor-principal);margin-top:10px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input{width:100%;padding:12px;margin:0 0 12px;border:1px solid #D1D5DB;border-radius:10px;font:15px var(--fonte)}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid #E5E7EB;border-radius:10px;padding:14px;margin-bottom:10px;font:15px var(--fonte);cursor:pointer}
+.opt:hover,.opt.sel{border-color:var(--cor-principal);background:var(--cor-clara)}
+.bar{height:8px;background:#E5E7EB;border-radius:8px;margin-bottom:18px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--degrade);transition:width .3s}
+.small{font-size:13px;color:#6B7280}
+.score{font-size:44px;font-weight:800;color:var(--cor-principal);margin:0}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header><div class="logo" id="logo">ZAPI<span>PRO</span></div></header>
+<main>
+
+<section class="card" id="tela-inicio">
+  <h1>Scorecard de Maturidade <em>Operacional B2B</em></h1>
+  <p>Responda 10 perguntas rápidas e descubra em que nível está a operação da sua empresa. Leva menos de 3 minutos e, no final, você ganha <strong>14 dias grátis na ZAPIPRO</strong>.</p>
+  <button class="btn" onclick="ir('tela-lead')">Começar</button>
+</section>
+
+<section class="card hidden" id="tela-lead">
+  <h2>Antes de começar, quem é você?</h2>
+  <input id="nome" placeholder="Seu nome">
+  <input id="email" type="email" placeholder="Seu e-mail">
+  <input id="whats" placeholder="WhatsApp com DDD">
+  <input id="empresa" placeholder="Nome da empresa">
+  <input id="cargo" placeholder="Seu cargo">
+  <button class="btn" onclick="validarLead()">Ir para as perguntas</button>
+  <p class="small" id="erro-lead"></p>
+</section>
+
+<section class="card hidden" id="tela-quiz">
+  <div class="bar"><i id="progresso"></i></div>
+  <p class="small" id="contador"></p>
+  <h2 id="pergunta"></h2>
+  <div id="opcoes"></div>
+</section>
+
+<section class="card hidden" id="tela-resultado">
+  <p class="small">Sua pontuação</p>
+  <p class="score" id="pontos"></p>
+  <h2 id="res-titulo"></h2>
+  <p id="res-texto"></p>
+  <p id="res-oferta"></p>
+  <a class="btn" id="btn-trial" target="_blank" rel="noopener">Testar a ZAPIPRO grátis por 14 dias</a>
+  <a class="btn sec" id="btn-whats" target="_blank" rel="noopener">Falar com um especialista no WhatsApp</a>
+</section>
+
+</main>
+<script>
+/* ===== CONFIGURAÇÃO: edite aqui ===== */
+const CONFIG = {
+  whatsapp: "5562993645031",          // Davi José, Comercial ZAPIPRO
+  trial: "https://zapipro.com.br/convite",   // link do teste grátis de 14 dias
+  logoUrl: "",                        // cole o link do logo da ZAPIPRO (opcional)
+  endpoint: ""                        // opcional: URL de um webhook (Zapier/Make/Tally) para receber os leads
+};
+
+const PERGUNTAS = [
+ ["Como seus processos principais estão registrados?",["Só na cabeça das pessoas","Parcialmente documentados","Documentados e seguidos pela equipe"]],
+ ["Se você ficar 15 dias fora, a empresa funciona?",["Para quase tudo","Funciona, mas com problemas","Funciona normalmente"]],
+ ["Cada pessoa da equipe sabe exatamente qual é a sua responsabilidade?",["Não, as funções se misturam","Mais ou menos","Sim, tudo está definido"]],
+ ["Como funciona o seu processo de vendas?",["Cada venda acontece de um jeito","Existe uma rotina, mas sem padrão fixo","Existe um funil com etapas claras"]],
+ ["Você acompanha indicadores (vendas, margem, custo, retenção)?",["Quase nunca","Às vezes, de forma manual","Toda semana ou mês, de forma organizada"]],
+ ["Como você decide as prioridades da empresa?",["Pelo que aparece de urgente","Pelo meu feeling","Por dados e metas definidas"]],
+ ["Como você usa ferramentas e sistemas (CRM, planilhas, automações)?",["Quase nada ou tudo solto","Tenho algumas, mas não integradas","Sistemas integrados e usados por todos"]],
+ ["Como é o pós-venda e o relacionamento com clientes?",["Só resolvo quando aparece problema","Faço contato de vez em quando","Tenho rotina e acompanhamento ativo"]],
+ ["Como funciona a entrada de um novo colaborador?",["Aprende na prática, sem roteiro","Há uma explicação básica","Existe onboarding estruturado"]],
+ ["Se a demanda dobrasse amanhã, sua operação aguentaria?",["Não, quebraria","Com muito sufoco","Sim, está preparada para crescer"]]
+];
+
+const RESULTADOS = [
+ {max:16,titulo:"Operação reativa",texto:"A empresa depende muito de você e de improviso. O primeiro passo é documentar 3 processos principais e definir responsabilidades.",oferta:"Seu funil e seus processos estão soltos. Em 14 dias, organize tudo no CRM da ZAPIPRO, sem pagar nada."},
+ {max:23,titulo:"Operação em estruturação",texto:"Já existe uma base, mas falta padrão e acompanhamento. Foque em indicadores e em um processo de vendas claro.",oferta:"Você já tem base. Use 14 dias grátis na ZAPIPRO para ganhar padrão, indicadores e automações."},
+ {max:30,titulo:"Operação preparada para escalar",texto:"A estrutura está sólida. O próximo nível é otimizar, automatizar e crescer com controle.",oferta:"Teste automações e agentes de IA por 14 dias grátis na ZAPIPRO e escale com controle."}
+];
+
+let atual=0, pontos=0, lead={};
+
+if(CONFIG.logoUrl){document.getElementById("logo").innerHTML='<img src="'+CONFIG.logoUrl+'" alt="ZAPIPRO">';}
+
+function ir(id){
+  document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+
+function validarLead(){
+  lead={nome:nome.value.trim(),email:email.value.trim(),whatsapp:whats.value.trim(),empresa:empresa.value.trim(),cargo:cargo.value.trim()};
+  if(!lead.nome||!lead.email.includes("@")||lead.whatsapp.length<8){
+    document.getElementById("erro-lead").textContent="Preencha nome, e-mail válido e WhatsApp.";return;
+  }
+  ir("tela-quiz"); mostrar();
+}
+
+function mostrar(){
+  const [q,ops]=PERGUNTAS[atual];
+  document.getElementById("contador").textContent="Pergunta "+(atual+1)+" de "+PERGUNTAS.length;
+  document.getElementById("progresso").style.width=(atual/PERGUNTAS.length*100)+"%";
+  document.getElementById("pergunta").textContent=q;
+  const box=document.getElementById("opcoes"); box.innerHTML="";
+  ops.forEach((t,i)=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.textContent=t;
+    b.onclick=()=>responder(i+1);
+    box.appendChild(b);
+  });
+}
+
+function responder(p){
+  pontos+=p; atual++;
+  if(atual<PERGUNTAS.length){mostrar();}else{finalizar();}
+}
+
+function finalizar(){
+  const r=RESULTADOS.find(x=>pontos<=x.max);
+  document.getElementById("pontos").textContent=pontos+" / 30";
+  document.getElementById("res-titulo").textContent=r.titulo;
+  document.getElementById("res-texto").textContent=r.texto;
+  document.getElementById("res-oferta").innerHTML="<strong>"+r.oferta+"</strong>";
+  document.getElementById("btn-trial").href=CONFIG.trial;
+  const msg=encodeURIComponent("Olá Davi! Vim do Scorecard da ZAPIPRO. Fiz o Scorecard de Maturidade Operacional B2B e minha pontuação foi "+pontos+"/30 ("+r.titulo+"). Quero conversar sobre meu resultado e entender o teste grátis de 14 dias.");
+  document.getElementById("btn-whats").href="https://wa.me/"+CONFIG.whatsapp+"?text="+msg;
+  if(CONFIG.endpoint){
+    fetch(CONFIG.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...lead,pontos,nivel:r.titulo})}).catch(()=>{});
+  }
+  ir("tela-resultado");
+}
+</script>
+</body>
+</html>
